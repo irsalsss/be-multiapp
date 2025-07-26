@@ -71,7 +71,7 @@ router.get("/:id", requireAuth(), async (req: Request, res: Response) => {
     res.status(200).send(chat);
   } catch (err) {
     console.log(err);
-    res.status(500).send("Error fetching chat!");
+    res.status(500).send({ message: "Error fetching chat!" });
   }
 });
 
@@ -101,7 +101,24 @@ router.put("/:id", requireAuth(), async (req: Request, res: Response) => {
     res.status(200).send(updatedChat);
   } catch (err) {
     console.log(err);
-    res.status(500).send("Error adding conversation!");
+    res.status(500).send({ message: "Error adding conversation!" });
+  }
+});
+
+router.delete("/:id", requireAuth(), async (req: Request, res: Response) => {
+  const userId = hasPermission(req, res);
+
+  try {
+    const deletedChat = await Chat.deleteOne({ _id: req.params.id, userId });
+
+    if (!deletedChat.deletedCount) {
+      return res.status(404).send({ message: "Chat not found!" });
+    }
+
+    res.status(200).send({ message: "Chat deleted successfully!" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).send({ message: "Error deleting chat!" });
   }
 });
 

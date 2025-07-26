@@ -25,10 +25,22 @@ const chatSchema = new mongoose.Schema(
           type: String,
           required: false,
         },
+        createdAt: {
+          type: Date,
+          default: Date.now(),
+        },
       },
     ],
   },
-  { timestamps: true }
+  { 
+    timestamps: true,
+    toJSON: {
+      transform: function(doc, ret) {
+        delete ret.userId;
+        return ret;
+      }
+    }
+  }
 );
 
 export default mongoose.models.chat || mongoose.model("chat", chatSchema);
