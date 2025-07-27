@@ -8,7 +8,7 @@ const router = Router();
 
 router.post("/", requireAuth(), async (req: Request, res: Response) => {
   const userId = hasPermission(req, res);
-  const { title, description } = req.body;
+  const { title } = req.body;
 
   try {
     // CREATE A NEW CHAT
@@ -16,7 +16,6 @@ router.post("/", requireAuth(), async (req: Request, res: Response) => {
       userId: userId,
       history: [
         { role: "user", parts: [{ text: title }] }, 
-        { role: "model", parts: [{ text: description }] }
       ],
     });
 
@@ -33,7 +32,6 @@ router.post("/", requireAuth(), async (req: Request, res: Response) => {
           {
             _id: savedChat._id,
             title,
-            description,
           },
         ],
       });
@@ -48,7 +46,6 @@ router.post("/", requireAuth(), async (req: Request, res: Response) => {
             conversations: {
               _id: savedChat._id,
               title,
-              description,
             },
           },
         }
@@ -88,7 +85,19 @@ router.put("/:id", requireAuth(), async (req: Request, res: Response) => {
   ];
 
   try {
-    const updatedChat = await Chat.updateOne(
+    const history = await Chat.findOne({ _id: req.params.id, userId });
+
+    if (history?.history?.length === 1) {
+      const updateFields: Record<string, string> = {};
+      updateFields["conversations.$.description"] = answer;
+
+      await Conversation.updateOne(
+        { userId: userId, "conversations._id": req.params.id },
+        { $set: updateFields }
+      );
+    }
+
+    await Chat.updateOne(
       { _id: req.params.id, userId },
       {
         $push: {
@@ -98,10 +107,11 @@ router.put("/:id", requireAuth(), async (req: Request, res: Response) => {
         },
       }
     );
-    res.status(200).send(updatedChat);
+
+    res.status(200).send(newItems[0]);
   } catch (err) {
     console.log(err);
-    res.status(500).send({ message: "Error adding conversation!" });
+    res.status(500).send({ message: "Error adding chat!" });
   }
 });
 

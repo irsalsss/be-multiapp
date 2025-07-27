@@ -27,6 +27,36 @@ router.get("/", requireAuth(), async (req, res) => {
   }
 });
 
+router.put("/:id", requireAuth(), async (req, res) => {
+  const userId = hasPermission(req, res);
+
+  const { title, description } = req.body;
+
+  try {
+    const updateFields: Record<string, string> = {};
+    if (title) updateFields["conversations.$.title"] = title;
+    if (description) updateFields["conversations.$.description"] = description;
+
+    if (Object.keys(updateFields).length === 0) {
+      return res.status(400).send({ message: "No valid fields to update!" });
+    }
+
+    const result = await Conversation.updateOne(
+      { _id: req.params.id, userId },
+      { $set: updateFields }
+    );
+
+    if (!result.modifiedCount) {
+      return res.status(404).send({ message: "Conversation not found!" });
+    }
+
+    res.status(200).send({ message: "Conversation updated successfully!" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).send({ message: "Error updating conversation!" });
+  }
+});
+
 router.delete("/:id", requireAuth(), async (req, res) => {
   const userId = hasPermission(req, res);
 
