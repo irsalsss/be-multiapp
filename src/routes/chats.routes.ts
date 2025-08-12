@@ -97,7 +97,7 @@ router.put("/:id", requireAuth(), async (req: Request, res: Response) => {
       );
     }
 
-    await Chat.updateOne(
+    const updatedChat = await Chat.findOneAndUpdate(
       { _id: req.params.id, userId },
       {
         $push: {
@@ -105,10 +105,15 @@ router.put("/:id", requireAuth(), async (req: Request, res: Response) => {
             $each: newItems,
           },
         },
-      }
+      },
+      { new: true }
     );
 
-    res.status(200).send(newItems[0]);
+    res.status(200).send({
+      ...newItems[0],
+      id: updatedChat?._id,
+      createdAt: updatedChat?.createdAt,
+    });
   } catch (err) {
     console.log(err);
     res.status(500).send({ message: "Error adding chat!" });
