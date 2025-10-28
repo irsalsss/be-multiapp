@@ -23,12 +23,13 @@ const chatSchema = new mongoose.Schema(
               type: Date,
               default: Date.now,
             },
+            // todo handle images
+            img: {
+              type: String,
+              required: false,
+            },
           },
         ],
-        img: {
-          type: String,
-          required: false,
-        },
         createdAt: {
           type: Date,
           default: Date.now,

@@ -81,8 +81,11 @@ router.put("/:id", requireAuth(), async (req: Request, res: Response) => {
     ...(question
       ? [{ role: "user", parts: [{ text: question }], ...(img && { img }) }]
       : []),
-    { role: "model", parts: [{ text: answer }] },
   ];
+
+  if (answer) {
+    newItems.push({ role: "model", parts: [{ text: answer }] });
+  }
 
   try {
     const history = await Chat.findOne({ _id: req.params.id, userId });
