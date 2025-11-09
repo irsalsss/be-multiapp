@@ -25,13 +25,17 @@ const conversationSchema = new mongoose.Schema(
           type: String,
           required: true,
         },
+        isSaved: {
+          type: Boolean,
+          default: false,
+        },
         createdAt: {
           type: Date,
           default: Date.now,
         },
       },
     ],
-  }
+  },
 );
 
 export default mongoose.models.conversation ||

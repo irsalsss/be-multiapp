@@ -37,6 +37,7 @@ router.post("/", requireAuth(), async (req: Request, res: Response) => {
       });
 
       await newConversation.save();
+      res.status(201).send(savedChat._id);
     } else {
       // IF EXISTS, PUSH THE CHAT TO THE EXISTING ARRAY
       await Conversation.updateOne(
@@ -64,8 +65,33 @@ router.get("/:id", requireAuth(), async (req: Request, res: Response) => {
 
   try {
     const chat = await Chat.findOne({ _id: req.params.id, userId });
+    
+    if (!chat) {
+      return res.status(404).send({ message: "Chat not found!" });
+    }
 
-    res.status(200).send(chat);
+    const conversationDoc = await Conversation.findOne({ userId });
+    
+    const conversationItem = conversationDoc?.conversations?.find(
+      (conv: any) => conv._id.toString() === req.params.id
+    );
+
+    const chatObj = chat.toObject();
+    const conversationObj = conversationItem ? conversationItem.toObject() : {};
+    
+    // Remove unwanted fields
+    delete chatObj.userId;
+    delete chatObj.__v;
+    delete conversationObj.userId;
+    delete conversationObj.__v;
+    delete conversationObj.createdAt;
+
+    const response = {
+      ...chatObj,
+      ...conversationObj,
+    };
+
+    res.status(200).send(response);
   } catch (err) {
     console.log(err);
     res.status(500).send({ message: "Error fetching chat!" });
@@ -140,4 +166,6 @@ router.delete("/:id", requireAuth(), async (req: Request, res: Response) => {
   }
 });
 
-export default router; 
+// TODO handle unit tests for the routes
+
+export default router;

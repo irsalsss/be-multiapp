@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Request, Response, Router } from 'express';
 import { requireAuth } from '@clerk/express';
 import { hasPermission } from '../utils/clerk';
 import Conversation from '../models/conversation.models';
@@ -76,6 +76,38 @@ router.delete("/:id", requireAuth(), async (req, res) => {
   } catch (err) {
     console.log(err);
     res.status(500).send({ message: "Error deleting conversation!" });
+  }
+});
+
+router.put("/:id/save", requireAuth(), async (req: Request, res: Response) => {
+  const userId = hasPermission(req, res);
+
+  try {
+    await Conversation.updateOne(
+      { userId: userId, "conversations._id": req.params.id },
+      { $set: { "conversations.$.isSaved": true } }
+    );
+
+    res.status(200).send({ message: "Conversation saved successfully!" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).send({ message: "Error saving Conversation!" });
+  }
+});
+
+router.put("/:id/unsave", requireAuth(), async (req: Request, res: Response) => {
+  const userId = hasPermission(req, res);
+
+  try {
+    await Conversation.updateOne(
+      { userId: userId, "conversations._id": req.params.id },
+      { $set: { "conversations.$.isSaved": false } }
+    );
+
+    res.status(200).send({ message: "Conversation unsaved successfully!" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).send({ message: "Error unsaving Conversation!" });
   }
 });
 
