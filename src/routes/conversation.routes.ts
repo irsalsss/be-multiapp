@@ -2,7 +2,7 @@ import { Request, Response, Router } from 'express';
 import { requireAuth } from '@clerk/express';
 import { hasPermission } from '../utils/clerk';
 import Conversation from '../models/conversation.models';
-import Chat from '../models/chat.models';
+import Thread from '../models/thread.models';
 
 const router = Router();
 
@@ -33,16 +33,19 @@ router.put("/:id", requireAuth(), async (req, res) => {
   const { title, description } = req.body;
 
   try {
-    const updateFields: Record<string, string> = {};
+    const updateFields: Record<string, any> = {};
     if (title) updateFields["conversations.$.title"] = title;
     if (description) updateFields["conversations.$.description"] = description;
+    
+    // Update the updatedAt timestamp
+    updateFields["conversations.$.updatedAt"] = new Date();
 
-    if (Object.keys(updateFields).length === 0) {
+    if (Object.keys(updateFields).length === 1) {
       return res.status(400).send({ message: "No valid fields to update!" });
     }
 
     const result = await Conversation.updateOne(
-      { _id: req.params.id, userId },
+      { userId, "conversations._id": req.params.id },
       { $set: updateFields }
     );
 
@@ -70,7 +73,7 @@ router.delete("/:id", requireAuth(), async (req, res) => {
       return res.status(404).send({ message:"Conversation not found!"});
     }
 
-    await Chat.deleteMany({ _id: req.params.id });
+    await Thread.deleteMany({ _id: req.params.id });
 
     res.status(200).send({ message: "Conversation deleted successfully!" });
   } catch (err) {
@@ -85,7 +88,10 @@ router.put("/:id/save", requireAuth(), async (req: Request, res: Response) => {
   try {
     await Conversation.updateOne(
       { userId: userId, "conversations._id": req.params.id },
-      { $set: { "conversations.$.isSaved": true } }
+      { $set: { 
+        "conversations.$.isSaved": true,
+        "conversations.$.updatedAt": new Date()
+      } }
     );
 
     res.status(200).send({ message: "Conversation saved successfully!" });
@@ -101,7 +107,10 @@ router.put("/:id/unsave", requireAuth(), async (req: Request, res: Response) => 
   try {
     await Conversation.updateOne(
       { userId: userId, "conversations._id": req.params.id },
-      { $set: { "conversations.$.isSaved": false } }
+      { $set: { 
+        "conversations.$.isSaved": false,
+        "conversations.$.updatedAt": new Date()
+      } }
     );
 
     res.status(200).send({ message: "Conversation unsaved successfully!" });

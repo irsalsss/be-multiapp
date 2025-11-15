@@ -12,7 +12,7 @@ const conversationSchema = new mongoose.Schema(
       default: 0,
     },
     conversations: [
-      {
+      new mongoose.Schema({
         _id: {
           type: String,
           required: true,
@@ -23,17 +23,13 @@ const conversationSchema = new mongoose.Schema(
         },
         description: {
           type: String,
-          required: true,
+          required: false,
         },
         isSaved: {
           type: Boolean,
           default: false,
         },
-        createdAt: {
-          type: Date,
-          default: Date.now,
-        },
-      },
+      }, { timestamps: true }),
     ],
   },
 );

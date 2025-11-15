@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { requireAuth } from '@clerk/express';
-import Chat from '../models/chat.models';
+import Thread from '../models/thread.models';
 import { hasPermission } from '../utils/clerk';
 import Conversation from '../models/conversation.models';
 
@@ -11,52 +11,52 @@ router.post("/", requireAuth(), async (req: Request, res: Response) => {
   const { title } = req.body;
 
   try {
-    // CREATE A NEW CHAT
-    const newChat = new Chat({
+    // CREATE A NEW THREAD
+    const newThread = new Thread({
       userId: userId,
       history: [
         { role: "user", parts: [{ text: title }] }, 
       ],
     });
 
-    const savedChat = await newChat.save();
+    const savedThread = await newThread.save();
 
     // CHECK IF THE CONVERSATION EXISTS
     const conversation = await Conversation.find({ userId: userId });
 
-    // IF DOESN'T EXIST CREATE A NEW ONE AND ADD THE CHAT IN THE CHATS ARRAY
+    // IF DOESN'T EXIST CREATE A NEW ONE AND ADD THE THREAD IN THE THREADS ARRAY
     if (!conversation.length) {
       const newConversation = new Conversation({
         userId: userId,
         conversations: [
           {
-            _id: savedChat._id,
+            _id: savedThread._id,
             title,
           },
         ],
       });
 
       await newConversation.save();
-      res.status(201).send(savedChat._id);
+      res.status(201).send(savedThread._id);
     } else {
-      // IF EXISTS, PUSH THE CHAT TO THE EXISTING ARRAY
+      // IF EXISTS, PUSH THE THREAD TO THE EXISTING ARRAY
       await Conversation.updateOne(
         { userId: userId },
         {
           $push: {
             conversations: {
-              _id: savedChat._id,
+              _id: savedThread._id,
               title,
             },
           },
         }
       );
 
-      res.status(201).send(newChat._id);
+      res.status(201).send(newThread._id);
     }
   } catch (err) {
     console.log(err);
-    res.status(500).send("Error creating chat!");
+    res.status(500).send("Error creating thread!");
   }
 });
 
@@ -64,10 +64,10 @@ router.get("/:id", requireAuth(), async (req: Request, res: Response) => {
   const userId = hasPermission(req, res);
 
   try {
-    const chat = await Chat.findOne({ _id: req.params.id, userId });
+    const thread = await Thread.findOne({ _id: req.params.id, userId });
     
-    if (!chat) {
-      return res.status(404).send({ message: "Chat not found!" });
+    if (!thread) {
+      return res.status(404).send({ message: "Thread not found!" });
     }
 
     const conversationDoc = await Conversation.findOne({ userId });
@@ -76,25 +76,24 @@ router.get("/:id", requireAuth(), async (req: Request, res: Response) => {
       (conv: any) => conv._id.toString() === req.params.id
     );
 
-    const chatObj = chat.toObject();
+    const threadObj = thread.toObject();
     const conversationObj = conversationItem ? conversationItem.toObject() : {};
     
     // Remove unwanted fields
-    delete chatObj.userId;
-    delete chatObj.__v;
+    delete threadObj.userId;
+    delete threadObj.__v;
     delete conversationObj.userId;
     delete conversationObj.__v;
-    delete conversationObj.createdAt;
 
     const response = {
-      ...chatObj,
+      ...threadObj,
       ...conversationObj,
     };
 
     res.status(200).send(response);
   } catch (err) {
     console.log(err);
-    res.status(500).send({ message: "Error fetching chat!" });
+    res.status(500).send({ message: "Error fetching thread!" });
   }
 });
 
@@ -114,11 +113,12 @@ router.put("/:id", requireAuth(), async (req: Request, res: Response) => {
   }
 
   try {
-    const history = await Chat.findOne({ _id: req.params.id, userId });
+    const history = await Thread.findOne({ _id: req.params.id, userId });
 
     if (history?.history?.length === 1) {
-      const updateFields: Record<string, string> = {};
+      const updateFields: Record<string, any> = {};
       updateFields["conversations.$.description"] = answer;
+      updateFields["conversations.$.updatedAt"] = new Date();
 
       await Conversation.updateOne(
         { userId: userId, "conversations._id": req.params.id },
@@ -126,7 +126,7 @@ router.put("/:id", requireAuth(), async (req: Request, res: Response) => {
       );
     }
 
-    const updatedChat = await Chat.findOneAndUpdate(
+    const updatedThread = await Thread.findOneAndUpdate(
       { _id: req.params.id, userId },
       {
         $push: {
@@ -140,12 +140,12 @@ router.put("/:id", requireAuth(), async (req: Request, res: Response) => {
 
     res.status(200).send({
       ...newItems[0],
-      id: updatedChat?._id,
-      createdAt: updatedChat?.createdAt,
+      id: updatedThread?._id,
+      createdAt: updatedThread?.createdAt,
     });
   } catch (err) {
     console.log(err);
-    res.status(500).send({ message: "Error adding chat!" });
+    res.status(500).send({ message: "Error adding thread!" });
   }
 });
 
@@ -153,19 +153,20 @@ router.delete("/:id", requireAuth(), async (req: Request, res: Response) => {
   const userId = hasPermission(req, res);
 
   try {
-    const deletedChat = await Chat.deleteOne({ _id: req.params.id, userId });
+    const deletedThread = await Thread.deleteOne({ _id: req.params.id, userId });
 
-    if (!deletedChat.deletedCount) {
-      return res.status(404).send({ message: "Chat not found!" });
+    if (!deletedThread.deletedCount) {
+      return res.status(404).send({ message: "Thread not found!" });
     }
 
-    res.status(200).send({ message: "Chat deleted successfully!" });
+    res.status(200).send({ message: "Thread deleted successfully!" });
   } catch (err) {
     console.log(err);
-    res.status(500).send({ message: "Error deleting chat!" });
+    res.status(500).send({ message: "Error deleting thread!" });
   }
 });
 
 // TODO handle unit tests for the routes
 
 export default router;
+

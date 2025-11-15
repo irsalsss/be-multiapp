@@ -1,40 +1,32 @@
 import mongoose from "mongoose";
 
-const chatSchema = new mongoose.Schema(
+const threadSchema = new mongoose.Schema(
   {
     userId: {
       type: String,
       required: true,
     },
     history: [
-      {
+      new mongoose.Schema({
         role: {
           type: String,
           enum: ["user", "model"],
           required: true,
         },
         parts: [
-          {
+          new mongoose.Schema({
             text: {
               type: String,
               required: true,
-            },
-            createdAt: {
-              type: Date,
-              default: Date.now,
             },
             // todo handle images
             img: {
               type: String,
               required: false,
             },
-          },
+          }, { timestamps: true }),
         ],
-        createdAt: {
-          type: Date,
-          default: Date.now,
-        },
-      },
+      }, { timestamps: true }),
     ],
   },
   { 
@@ -47,4 +39,5 @@ const chatSchema = new mongoose.Schema(
   }
 );
 
-export default mongoose.models.chat || mongoose.model("chat", chatSchema);
+export default mongoose.models.thread || mongoose.model("thread", threadSchema);
+

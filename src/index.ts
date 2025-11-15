@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { Error } from 'mongoose';
-import chatsRoutes from './routes/chats.routes';
+import threadsRoutes from './routes/threads.routes';
 import conversations from './routes/conversation.routes';
 
 const port = process.env.PORT || 4000;
@@ -29,7 +29,7 @@ app.use(
 app.use(express.json());
 
 // Routes
-app.use('/api/chats', chatsRoutes);
+app.use('/api/threads', threadsRoutes);
 app.use('/api/conversations', conversations);
 
 // Error handling middleware
