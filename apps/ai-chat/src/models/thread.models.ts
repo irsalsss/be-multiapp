@@ -32,7 +32,7 @@ const threadSchema = new mongoose.Schema(
   { 
     toJSON: {
       transform: function(doc, ret) {
-        delete ret.userId;
+        delete (ret as any).userId;
         return ret;
       }
     }

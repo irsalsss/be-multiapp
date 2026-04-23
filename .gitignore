@@ -3,3 +3,12 @@ dist/
 .env
 .DS_Store
 *.log 
+
+# Docker override files containing secrets
+docker-compose.override.yml
+docker-compose.prod.yml
+
+# Agent temporary and credentials
+.tmp/
+credentials.json
+token.json

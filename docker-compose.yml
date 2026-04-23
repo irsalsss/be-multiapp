@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/ai-chat/Dockerfile
+    container_name: be-multiapp-api
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+    restart: unless-stopped
+    # If using a local MongoDB container, you can uncomment the following lines
+    # depends_on:
+    #   - mongodb
+
+  # Optional: Local MongoDB service if you don't want to use MongoDB Atlas
+  # mongodb:
+  #   image: mongo:6
+  #   container_name: be-multiapp-mongodb
+  #   ports:
+  #     - "27017:27017"
+  #   volumes:
+  #     - mongodb_data:/data/db
+  #   restart: unless-stopped
+
+# volumes:
+#   mongodb_data:
