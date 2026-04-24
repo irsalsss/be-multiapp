@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  api:
+    environment:
+      # Put your production values here
+      - IMAGE_KIT_ENDPOINT=${IMAGE_KIT_ENDPOINT}
+      - IMAGE_KIT_PUBLIC_KEY=${IMAGE_KIT_PUBLIC_KEY}
+      - IMAGE_KIT_PRIVATE_KEY=${IMAGE_KIT_PRIVATE_KEY}
+      - CLIENT_URL=${CLIENT_URL}
+      - MONGO=${MONGO}
+      - CLERK_PUBLISHABLE_KEY=${CLERK_PUBLISHABLE_KEY}
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+    # You can add other production-specific settings here like restart policies
+    restart: always

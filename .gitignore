@@ -6,7 +6,6 @@ dist/
 
 # Docker override files containing secrets
 docker-compose.override.yml
-docker-compose.prod.yml
 
 # Agent temporary and credentials
 .tmp/
