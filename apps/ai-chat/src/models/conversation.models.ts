@@ -4,7 +4,11 @@ const conversationSchema = new mongoose.Schema(
   {
     userId: {
       type: String,
-      required: true,
+      required: false,
+    },
+    guestId: {
+      type: String,
+      required: false,
     },
     length: {
       type: Number,

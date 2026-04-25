@@ -1,19 +1,20 @@
 import { Router, Request, Response } from 'express';
-import { requireAuth } from '@clerk/express';
 import Thread from '../models/thread.models';
-import { hasPermission } from '../utils/clerk';
+import { getIdentifier } from '../utils/clerk';
 import Conversation from '../models/conversation.models';
+import { rateLimiter } from '../middlewares/rateLimiter';
 
 const router = Router();
 
-router.post("/", requireAuth(), async (req: Request, res: Response) => {
-  const userId = hasPermission(req, res);
+router.post("/", rateLimiter, async (req: Request, res: Response) => {
+  const { userId, guestId } = getIdentifier(req);
   const { title } = req.body;
 
   try {
     // CREATE A NEW THREAD
     const newThread = new Thread({
-      userId: userId,
+      userId,
+      guestId,
       history: [
         { role: "user", parts: [{ text: title }] }, 
       ],
@@ -22,12 +23,13 @@ router.post("/", requireAuth(), async (req: Request, res: Response) => {
     const savedThread = await newThread.save();
 
     // CHECK IF THE CONVERSATION EXISTS
-    const conversation = await Conversation.find({ userId: userId });
+    const conversation = await Conversation.find(userId ? { userId } : { guestId });
 
     // IF DOESN'T EXIST CREATE A NEW ONE AND ADD THE THREAD IN THE THREADS ARRAY
     if (!conversation.length) {
       const newConversation = new Conversation({
-        userId: userId,
+        userId,
+        guestId,
         conversations: [
           {
             _id: savedThread._id,
@@ -41,7 +43,7 @@ router.post("/", requireAuth(), async (req: Request, res: Response) => {
     } else {
       // IF EXISTS, PUSH THE THREAD TO THE EXISTING ARRAY
       await Conversation.updateOne(
-        { userId: userId },
+        userId ? { userId } : { guestId },
         {
           $push: {
             conversations: {
@@ -60,17 +62,17 @@ router.post("/", requireAuth(), async (req: Request, res: Response) => {
   }
 });
 
-router.get("/:id", requireAuth(), async (req: Request, res: Response) => {
-  const userId = hasPermission(req, res);
+router.get("/:id", async (req: Request, res: Response) => {
+  const { userId, guestId } = getIdentifier(req);
 
   try {
-    const thread = await Thread.findOne({ _id: req.params.id, userId });
+    const thread = await Thread.findOne({ _id: req.params.id, ...(userId ? { userId } : { guestId }) });
     
     if (!thread) {
       return res.status(404).send({ message: "Thread not found!" });
     }
-
-    const conversationDoc = await Conversation.findOne({ userId });
+    
+    const conversationDoc = await Conversation.findOne(userId ? { userId } : { guestId });
     
     const conversationItem = conversationDoc?.conversations?.find(
       (conv: any) => conv._id.toString() === req.params.id
@@ -97,8 +99,8 @@ router.get("/:id", requireAuth(), async (req: Request, res: Response) => {
   }
 });
 
-router.put("/:id", requireAuth(), async (req: Request, res: Response) => {
-  const userId = hasPermission(req, res);
+router.put("/:id", rateLimiter, async (req: Request, res: Response) => {
+  const { userId, guestId } = getIdentifier(req);
 
   const { question, answer, img } = req.body;
 
@@ -113,7 +115,7 @@ router.put("/:id", requireAuth(), async (req: Request, res: Response) => {
   }
 
   try {
-    const history = await Thread.findOne({ _id: req.params.id, userId });
+    const history = await Thread.findOne({ _id: req.params.id, ...(userId ? { userId } : { guestId }) });
 
     if (history?.history?.length === 1) {
       const updateFields: Record<string, any> = {};
@@ -121,13 +123,13 @@ router.put("/:id", requireAuth(), async (req: Request, res: Response) => {
       updateFields["conversations.$.updatedAt"] = new Date();
 
       await Conversation.updateOne(
-        { userId: userId, "conversations._id": req.params.id },
+        { ...(userId ? { userId } : { guestId }), "conversations._id": req.params.id },
         { $set: updateFields }
       );
     }
 
     const updatedThread = await Thread.findOneAndUpdate(
-      { _id: req.params.id, userId },
+      { _id: req.params.id, ...(userId ? { userId } : { guestId }) },
       {
         $push: {
           history: {
@@ -149,11 +151,11 @@ router.put("/:id", requireAuth(), async (req: Request, res: Response) => {
   }
 });
 
-router.delete("/:id", requireAuth(), async (req: Request, res: Response) => {
-  const userId = hasPermission(req, res);
+router.delete("/:id", async (req: Request, res: Response) => {
+  const { userId, guestId } = getIdentifier(req);
 
   try {
-    const deletedThread = await Thread.deleteOne({ _id: req.params.id, userId });
+    const deletedThread = await Thread.deleteOne({ _id: req.params.id, ...(userId ? { userId } : { guestId }) });
 
     if (!deletedThread.deletedCount) {
       return res.status(404).send({ message: "Thread not found!" });

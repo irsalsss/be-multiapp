@@ -10,3 +10,11 @@ export const hasPermission = (request: Request, response: Response) => {
 
   return auth.userId;
 };
+
+export const getIdentifier = (req: Request) => {
+  const auth = getAuth(req);
+  const userId = auth.userId || null;
+  const guestId = (req.headers['x-guest-id'] as string) || null;
+  
+  return { userId, guestId, identifier: userId || guestId };
+};

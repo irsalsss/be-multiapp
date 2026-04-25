@@ -4,7 +4,11 @@ const threadSchema = new mongoose.Schema(
   {
     userId: {
       type: String,
-      required: true,
+      required: false,
+    },
+    guestId: {
+      type: String,
+      required: false,
     },
     history: [
       new mongoose.Schema({
@@ -19,7 +23,6 @@ const threadSchema = new mongoose.Schema(
               type: String,
               required: true,
             },
-            // todo handle images
             img: {
               type: String,
               required: false,

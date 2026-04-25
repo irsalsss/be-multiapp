@@ -1,16 +1,16 @@
-import { Request, Response, Router } from 'express';
-import { requireAuth } from '@clerk/express';
-import { hasPermission } from '../utils/clerk';
+import { Router, Request, Response } from 'express';
+import { getIdentifier } from '../utils/clerk';
 import Conversation from '../models/conversation.models';
 import Thread from '../models/thread.models';
 
 const router = Router();
 
-router.get("/", requireAuth(), async (req, res) => {
-  const userId = hasPermission(req, res);
+router.get("/", async (req, res) => {
+  const { userId, guestId } = getIdentifier(req);
+  if (!userId && !guestId) return res.status(401).send("No identifier provided");
 
   try {
-    const conversation = await Conversation.find({ userId });
+    const conversation = await Conversation.find(userId ? { userId } : { guestId });
 
     // Handle case where no conversation exists for the user
     if (!conversation.length) {
@@ -27,8 +27,9 @@ router.get("/", requireAuth(), async (req, res) => {
   }
 });
 
-router.put("/:id", requireAuth(), async (req, res) => {
-  const userId = hasPermission(req, res);
+router.put("/:id", async (req, res) => {
+  const { userId, guestId } = getIdentifier(req);
+  if (!userId && !guestId) return res.status(401).send("No identifier provided");
 
   const { title, description } = req.body;
 
@@ -45,7 +46,7 @@ router.put("/:id", requireAuth(), async (req, res) => {
     }
 
     const result = await Conversation.updateOne(
-      { userId, "conversations._id": req.params.id },
+      { ...(userId ? { userId } : { guestId }), "conversations._id": req.params.id },
       { $set: updateFields }
     );
 
@@ -60,12 +61,13 @@ router.put("/:id", requireAuth(), async (req, res) => {
   }
 });
 
-router.delete("/:id", requireAuth(), async (req, res) => {
-  const userId = hasPermission(req, res);
+router.delete("/:id", async (req, res) => {
+  const { userId, guestId } = getIdentifier(req);
+  if (!userId && !guestId) return res.status(401).send("No identifier provided");
 
   try {
     const deletedConversation = await Conversation.updateOne(
-      { userId: userId },
+      userId ? { userId } : { guestId },
       { $pull: { conversations: { _id: req.params.id } } }
     );
 
@@ -82,12 +84,13 @@ router.delete("/:id", requireAuth(), async (req, res) => {
   }
 });
 
-router.put("/:id/save", requireAuth(), async (req: Request, res: Response) => {
-  const userId = hasPermission(req, res);
+router.put("/:id/save", async (req: Request, res: Response) => {
+  const { userId, guestId } = getIdentifier(req);
+  if (!userId && !guestId) return res.status(401).send("No identifier provided");
 
   try {
     await Conversation.updateOne(
-      { userId: userId, "conversations._id": req.params.id },
+      { ...(userId ? { userId } : { guestId }), "conversations._id": req.params.id },
       { $set: { 
         "conversations.$.isSaved": true,
         "conversations.$.updatedAt": new Date()
@@ -101,12 +104,13 @@ router.put("/:id/save", requireAuth(), async (req: Request, res: Response) => {
   }
 });
 
-router.put("/:id/unsave", requireAuth(), async (req: Request, res: Response) => {
-  const userId = hasPermission(req, res);
+router.put("/:id/unsave", async (req: Request, res: Response) => {
+  const { userId, guestId } = getIdentifier(req);
+  if (!userId && !guestId) return res.status(401).send("No identifier provided");
 
   try {
     await Conversation.updateOne(
-      { userId: userId, "conversations._id": req.params.id },
+      { ...(userId ? { userId } : { guestId }), "conversations._id": req.params.id },
       { $set: { 
         "conversations.$.isSaved": false,
         "conversations.$.updatedAt": new Date()
