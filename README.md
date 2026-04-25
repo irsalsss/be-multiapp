@@ -5,8 +5,9 @@ A Lerna and NPM Workspaces powered monorepo for managing multiple Express.js/Typ
 ## 🚀 Prerequisites
 
 Make sure you have the following installed on your machine:
-- [Node.js](https://nodejs.org/) (v16 or higher recommended)
-- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
+- [Node.js](https://nodejs.org/) (v18 or higher recommended)
+- [pnpm](https://pnpm.io/) (v9 or higher)
+- [Redis](https://redis.io/) (v7 or higher) - Required for Quota Management/Rate Limiting.
 - A running MongoDB instance or a MongoDB Atlas connection string.
 - A Clerk account for authentication.
 - An ImageKit account for media handling.
@@ -20,9 +21,9 @@ Make sure you have the following installed on your machine:
    ```
 
 2. **Install dependencies**:
-   Run this from the **root** directory. NPM Workspaces will automatically link packages and hoist dependencies:
+   Run this from the **root** directory. PNPM Workspaces will automatically link packages:
    ```bash
-   npm install
+   pnpm install
    ```
 
 3. **Set up Environment Variables**:
@@ -67,12 +68,14 @@ Make sure you have the following installed on your machine:
 
 ### Development Mode
 
-Since this is a monorepo, you must specify which app you want to run. To run `ai-chat` in development mode:
+To run `ai-chat` in development mode:
 
 ```bash
-npm run dev --workspace=apps/ai-chat
+pnpm --filter ai-chat dev
 ```
-*(Or `cd apps/ai-chat && npm run dev`)*
+*(Or `cd apps/ai-chat && pnpm dev`)*
+
+> **Note**: Pastikan Redis sudah berjalan (`docker-compose up redis -d`) sebelum menjalankan aplikasi.
 
 The server should now be running.
 
@@ -121,5 +124,6 @@ docker-compose down
 - **Framework**: [Express.js](https://expressjs.com/)
 - **Language**: [TypeScript](https://www.typescriptlang.org/)
 - **Database**: [MongoDB](https://www.mongodb.com/) with [Mongoose](https://mongoosejs.com/)
+- **Caching/Rate Limiting**: [Redis](https://redis.io/) via `ioredis`
 - **Authentication**: [Clerk](https://clerk.com/) (`@clerk/express`)
-- **Other**: `cors`, `dotenv`
+- **Other**: `cors`, `dotenv`, `pnpm`
