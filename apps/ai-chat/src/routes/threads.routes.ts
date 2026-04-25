@@ -2,11 +2,13 @@ import { Router, Request, Response } from 'express';
 import Thread from '../models/thread.models';
 import { getIdentifier } from '../utils/clerk';
 import Conversation from '../models/conversation.models';
+import { Usage } from '../models/stats.models';
+import redis from '../utils/redis';
 import { rateLimiter } from '../middlewares/rateLimiter';
 
 const router = Router();
 
-router.post("/", rateLimiter, async (req: Request, res: Response) => {
+router.post("/", async (req: Request, res: Response) => {
   const { userId, guestId } = getIdentifier(req);
   const { title } = req.body;
 
@@ -139,6 +141,32 @@ router.put("/:id", rateLimiter, async (req: Request, res: Response) => {
       },
       { new: true }
     );
+
+    // Increment usage only on success
+    const identifier = userId || guestId;
+    if (identifier) {
+      const today = new Date().toISOString().split('T')[0];
+      const individualKey = `usage:limit:${identifier}`;
+      const globalKey = `usage:global:daily:${today}`;
+      const now = Date.now();
+
+      const pipeline = redis.pipeline();
+      // Individual usage (ZSET for sliding window or simple count)
+      pipeline.zadd(individualKey, now, now.toString());
+      pipeline.expire(individualKey, 60 * 60 * 24); 
+      // Global usage (Daily string counter)
+      pipeline.incr(globalKey);
+      pipeline.expire(globalKey, 60 * 60 * 25);
+      
+      pipeline.exec().catch(err => console.error("Redis usage sync error:", err));
+
+      // Persistent MongoDB usage
+      Usage.findOneAndUpdate(
+        { identifier },
+        { $inc: { totalMessages: 1 }, lastActive: new Date() },
+        { upsert: true }
+      ).catch(err => console.error("MongoDB Usage sync error:", err));
+    }
 
     res.status(200).send({
       ...newItems[0],

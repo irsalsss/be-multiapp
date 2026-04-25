@@ -6,6 +6,7 @@ import { Error } from 'mongoose';
 import { clerkMiddleware } from '@clerk/express';
 import threadsRoutes from './routes/threads.routes';
 import conversations from './routes/conversation.routes';
+import statsRoutes from './routes/stats.routes';
 
 const port = process.env.PORT || 4000;
 
@@ -35,6 +36,7 @@ app.use(clerkMiddleware());
 // Routes
 app.use('/api/threads', threadsRoutes);
 app.use('/api/conversations', conversations);
+app.use('/api/stats', statsRoutes);
 
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: express.NextFunction) => {

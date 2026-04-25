@@ -11,6 +11,15 @@ services:
     environment:
       - PORT=4000
       - REDIS_PRIVATE_URL=${REDIS_PRIVATE_URL:-redis://localhost:6379}
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  redis:
+    image: redis:alpine
+    container_name: be-multiapp-redis
+    ports:
+      - "6379:6379"
     restart: unless-stopped
     # If using a local MongoDB container, you can uncomment the following lines
     # depends_on:

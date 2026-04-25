@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { getAuth } from '@clerk/express';
 import redis from '../utils/redis';
+import { Usage } from '../models/stats.models';
 
 export const rateLimiter = async (req: Request, res: Response, next: NextFunction) => {
   const auth = getAuth(req);
@@ -17,37 +18,42 @@ export const rateLimiter = async (req: Request, res: Response, next: NextFunctio
   }
 
   const isUser = !!userId;
-  const LIMIT = isUser ? 6 : 3;
-  const WINDOW_SECONDS = 24 * 60 * 60; // 24 hours
-  
-  const key = `usage:limit:${identifier}`;
-  const now = Date.now();
-  const windowStart = now - (WINDOW_SECONDS * 1000);
+  const INDIVIDUAL_LIMIT = isUser ? 6 : 3;
+  const GLOBAL_LIMIT = 30;
+
+  const today = new Date().toISOString().split('T')[0];
+  const individualKey = `usage:limit:${identifier}`;
+  const globalKey = `usage:global:daily:${today}`;
 
   try {
-    // We use a pipeline for performance but need to check count before adding
-    const pipeline = redis.pipeline();
-    pipeline.zremrangebyscore(key, 0, windowStart);
-    pipeline.zcard(key);
-    
-    const results = await pipeline.exec();
-    if (!results) throw new Error("Redis pipeline failed");
+    // Fetch counts from Redis
+    const [individualUsage, globalUsage] = await Promise.all([
+      redis.zcard(individualKey),
+      redis.get(globalKey)
+    ]);
 
-    const currentUsage = results[1][1] as number;
+    const individualCount = individualUsage;
+    const globalCount = parseInt(globalUsage || '0', 10);
 
-    if (currentUsage >= LIMIT) {
-      return res.status(429).json({ 
-        error: "Quota exceeded",
-        message: `You have reached your limit of ${LIMIT} questions per 24 hours.`,
-        limit: LIMIT,
-        usage: currentUsage,
-        nextReset: new Date(now + WINDOW_SECONDS * 1000).toISOString() // Approximate
+    // 1. Check Global Limit (Total 30)
+    if (globalCount >= GLOBAL_LIMIT) {
+      return res.status(429).json({
+        error: "Global quota exceeded",
+        message: "The server has reached its total daily limit. Please try again tomorrow.",
+        limit: GLOBAL_LIMIT,
+        usage: globalCount
       });
     }
 
-    // Add current request
-    await redis.zadd(key, now, now.toString());
-    await redis.expire(key, WINDOW_SECONDS);
+    // 2. Check Individual Limit (Guest 3, User 6)
+    if (individualCount >= INDIVIDUAL_LIMIT) {
+      return res.status(429).json({ 
+        error: "Individual quota exceeded",
+        message: `You have reached your limit of ${INDIVIDUAL_LIMIT} questions per day.`,
+        limit: INDIVIDUAL_LIMIT,
+        usage: individualCount
+      });
+    }
 
     next();
   } catch (error) {
