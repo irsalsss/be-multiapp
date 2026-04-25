@@ -43,6 +43,7 @@ Make sure you have the following installed on your machine:
          - MONGO=your_mongodb_connection_string
          - CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
          - CLERK_SECRET_KEY=your_clerk_secret_key
+         - REDIS_PRIVATE_URL=redis://localhost:6379
    ```
    
    **Option B: Running locally with npm**
@@ -62,6 +63,9 @@ Make sure you have the following installed on your machine:
    # Clerk Authentication credentials
    CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
    CLERK_SECRET_KEY=your_clerk_secret_key
+   
+   # Redis Connection
+   REDIS_PRIVATE_URL=redis://127.0.0.1:6379
    ```
 
 ## 💻 Running the Application
@@ -75,7 +79,7 @@ pnpm --filter ai-chat dev
 ```
 *(Or `cd apps/ai-chat && pnpm dev`)*
 
-> **Note**: Pastikan Redis sudah berjalan (`docker-compose up redis -d`) sebelum menjalankan aplikasi.
+> **Note**: Pastikan Redis Server sudah berjalan di lokal (atau melalui Docker terpisah) sebelum menjalankan aplikasi.
 
 The server should now be running.
 
@@ -113,6 +117,12 @@ We use Docker Compose overrides to manage environments without relying on a `.en
    ```bash
    docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
    ```
+
+### ☁️ Railway Deployment (Recommended)
+
+1. Add a **Redis** service in your Railway project.
+2. In your API service settings, add a variable: `REDIS_PRIVATE_URL` with value `${{Redis.REDIS_PRIVATE_URL}}`.
+3. Railway will handle the connection automatically.
 
 To stop the container in either environment:
 ```bash
