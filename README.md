@@ -2,6 +2,8 @@
 
 A Lerna and NPM Workspaces powered monorepo for managing multiple Express.js/TypeScript backend microservices. Currently contains the `ai-chat` application, which utilizes MongoDB, Clerk, and ImageKit.
 
+**Live Demo (AI Thread):** [https://i-faaza.com/app/ai-thread](https://i-faaza.com/app/ai-thread)
+
 ## 🚀 Prerequisites
 
 Make sure you have the following installed on your machine:
@@ -44,6 +46,7 @@ Make sure you have the following installed on your machine:
          - CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
          - CLERK_SECRET_KEY=your_clerk_secret_key
          - REDIS_PRIVATE_URL=redis://localhost:6379
+         - GEMINI_API_KEY=your_gemini_api_key
    ```
    
    **Option B: Running locally with npm**
@@ -66,6 +69,9 @@ Make sure you have the following installed on your machine:
    
    # Redis Connection
    REDIS_PRIVATE_URL=redis://127.0.0.1:6379
+
+   # Gemini API Key
+   GEMINI_API_KEY=your_gemini_api_key
    ```
 
 ## 💻 Running the Application
