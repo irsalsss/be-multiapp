@@ -7,6 +7,7 @@ import { clerkMiddleware } from '@clerk/express';
 import threadsRoutes from './routes/threads.routes';
 import conversations from './routes/conversation.routes';
 import statsRoutes from './routes/stats.routes';
+import geminiRoutes from './routes/gemini.routes';
 
 const port = process.env.PORT || 4000;
 
@@ -37,6 +38,8 @@ app.use(clerkMiddleware());
 app.use('/api/threads', threadsRoutes);
 app.use('/api/conversations', conversations);
 app.use('/api/stats', statsRoutes);
+app.use('/api/gemini', geminiRoutes);
+
 
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: express.NextFunction) => {

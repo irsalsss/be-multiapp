@@ -12,5 +12,6 @@ services:
       - CLERK_PUBLISHABLE_KEY=${CLERK_PUBLISHABLE_KEY}
       - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
       - REDIS_PRIVATE_URL=${REDIS_PRIVATE_URL}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     # You can add other production-specific settings here like restart policies
     restart: always
